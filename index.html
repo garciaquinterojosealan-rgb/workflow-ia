@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora IA</title>
+  <link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+  <div class="card">
+    <h1>Calculadora IA</h1>
+    <p>Esta calculadora te permite realizar operaciones aritméticas con n operandos y operadores</p>
+
+    <form id="calcForm">
+      <label for="operacion">Escribe tu operación <span style="color:red">*</span></label>
+      <textarea id="operacion" name="operacion" placeholder="Ejemplo: (4+2)*3" required></textarea>
+      <button id="submitBtn" type="submit">Calcular</button>
+    </form>
+
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    const webhookURL = "https://alangaqa.app.n8n.cloud/webhook/6b4b9dcc-697c-4624-b5af-3910a1521aa4";
+
+    document.getElementById("calcForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const resultadoDiv = document.getElementById("resultado");
+      const button = document.getElementById("submitBtn");
+      resultadoDiv.style.display = "none";
+      resultadoDiv.innerText = "";
+
+      const operacion = document.getElementById("operacion").value;
+
+      // Inicia animación de "Calculando..."
+      button.classList.add("loading");
+      button.disabled = true;
+
+      try {
+        // Obtiene IP pública
+        const ipResponse = await fetch("https://api.ipify.org?format=json");
+        const ipData = await ipResponse.json();
+
+        // Envía datos al Webhook
+        const response = await fetch(webhookURL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            operacion: operacion,
+            ip_publica: ipData.ip
+          })
+        });
+
+        if (!response.ok) throw new Error("Error al conectar con n8n");
+
+        const data = await response.json();
+
+        // Muestra resultado
+        resultadoDiv.style.display = "block";
+        resultadoDiv.innerHTML = `
+          <div class="card2">
+              <h1>Resultado de la Operación</h1>
+              <p><strong>Operación:</strong> ${data.operacion}</p>
+              <p><strong>Resultado:</strong> ${data.resultado}</p>
+          </div>
+        `;
+      } catch (err) {
+        resultadoDiv.style.display = "block";
+        resultadoDiv.innerHTML = `Error: ${err.message}`;
+      } finally {
+        // Termina animación
+        button.classList.remove("loading");
+        button.disabled = false;
+      }
+
+      e.target.reset();
+    });
+  </script>
+</body>
+</html>
+
